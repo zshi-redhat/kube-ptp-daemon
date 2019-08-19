@@ -65,14 +65,14 @@ func DiscoverPTPDevices() ([]string, error) {
 
         for _, dev := range net.NICs {
 		logging.Debugf("grabbing NIC timestamp capability for %v", dev.Name)
-		cmd := exec.Command(ethtoolPath, "-T", dev)
+		cmd := exec.Command(ethtoolPath, "-T", dev.Name)
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil {
-			logging.Debugf("could not grab NIC timestamp capability for %v: %v", dev, err)
+			logging.Debugf("could not grab NIC timestamp capability for %v: %v", dev.Name, err)
 		}
 		if netParseEthtoolTimeStampFeature(&out) {
-			nics = append(nics, device)
+			nics = append(nics, dev.Name)
 		}
 	}
 	return nics, nil
