@@ -1,0 +1,8 @@
+package: .
+import:
+- package: github.com/golang/glog
+- package: github.com/jaypipes/ghw
+  version: ^0.4.0
+- package: github.com/zshi-redhat/kube-ptp-daemon
+  subpackages:
+  - pkg/utils

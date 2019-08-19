@@ -1,0 +1,24 @@
+hash: e427d0b170b7a3abb8708aa19947500fb29856861d0ab6191f3fe6ad0a4f2093
+updated: 2019-08-18T21:41:39.104520992-04:00
+imports:
+- name: github.com/ghodss/yaml
+  version: 25d852aebe32c875e9c044af3eef9c7dc6bc777f
+- name: github.com/golang/glog
+  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+- name: github.com/jaypipes/ghw
+  version: 29869ac89830376f4997b823e455dac004acce4e
+- name: github.com/jaypipes/pcidb
+  version: 98ef3ee36c69f20650fe7855047ad042338c6983
+- name: github.com/mitchellh/go-homedir
+  version: af06845cf3004701891bf4fdb884bfe4920b3727
+- name: github.com/pkg/errors
+  version: 27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7
+- name: github.com/zshi-redhat/kube-ptp-daemon
+  version: e6425dc5fa6205e9ee4ab163fc848bd2cc06b7d9
+  subpackages:
+  - pkg/utils
+- name: gopkg.in/yaml.v2
+  version: 51d6538a90f86fe93ac480b35f37b2be17fef232
+- name: howett.net/plist
+  version: 591f970eefbbeb04d7b37f334a0c4c3256e32876
+testImports: []

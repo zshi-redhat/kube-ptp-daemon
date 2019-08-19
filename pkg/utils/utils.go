@@ -7,8 +7,8 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/golang/glog"
 	"github.com/jaypipes/ghw"
+	"github.com/zshi-redhat/kube-ptp-daemon/logging"
 )
 
 const (
@@ -30,6 +30,7 @@ func netParseEthtoolTimeStampFeature(cmdOut *bytes.Buffer) bool {
 	var hardTxEnabled bool
 	var hardRawEnabled bool
 
+	logging.Debugf("cmd output for %v", cmdOut)
 	scanner := bufio.NewScanner(cmdOut)
 	for scanner.Scan() {
 		line := strings.TrimPrefix(scanner.Text(), "\t")
@@ -63,14 +64,15 @@ func DiscoverPTPDevices() ([]string, error) {
         }
 
         for _, dev := range net.NICs {
-		cmd := exec.Command(ethtoolPath, "-T", dev.Name)
+		logging.Debugf("grabbing NIC timestamp capability for %v", dev.Name)
+		cmd := exec.Command(ethtoolPath, "-T", dev)
 		cmd.Stdout = &out
 		err := cmd.Run()
 		if err != nil {
-			glog.Infof("could not grab NIC timestamp capability for %v: %v", dev.Name, err)
+			logging.Debugf("could not grab NIC timestamp capability for %v: %v", dev, err)
 		}
 		if netParseEthtoolTimeStampFeature(&out) {
-			nics = append(nics, dev.Name)
+			nics = append(nics, device)
 		}
 	}
 	return nics, nil

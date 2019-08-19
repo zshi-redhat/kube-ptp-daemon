@@ -3,24 +3,28 @@ package main
 import (
 	"flag"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/zshi-redhat/kube-ptp-daemon/logging"
 	ptputils "github.com/zshi-redhat/kube-ptp-daemon/pkg/utils"
 )
 
 const (
-	defaultUpdateInterval = "5"
+	defaultUpdateInterval = 5
+	defaultLogLevel       = "debug"
 )
 
 type cliParams struct {
-	updateInterval	string
+	updateInterval	int
+	logLevel	string
 }
 
 // Parse Command line flags
 func flagInit(cp *cliParams) {
-        flag.StringVar(&cp.updateInterval, "update-interval",
-		defaultUpdateInterval, "Interval to update PTP status")
+        flag.IntVar(&cp.updateInterval, "update-interval", defaultUpdateInterval, "Interval to update PTP status")
+        flag.StringVar(&cp.logLevel, "log-level", defaultLogLevel, "Level of log message")
 }
 
 func main() {
@@ -28,7 +32,18 @@ func main() {
 	flag.Parse()
 	flagInit(cp)
 
-	glog.Infof("Resync period set to: %s [s]", cp.updateInterval)
+	if cp.logLevel != ""{
+		logging.SetLogLevel(cp.logLevel)
+	}
+
+	logging.Debugf("Resync period set to: %d [s]", cp.updateInterval)
+
+	nics, err := ptputils.DiscoverPTPDevices()
+	if err != nil {
+		logging.Debugf("discover PTP device failed: %v", err)
+		return
+	}
+	logging.Debugf("PTP capable NICs: %v", nics)
 
 	tickerPull := time.NewTicker(time.Second * time.Duration(cp.updateInterval))
 	defer tickerPull.Stop()
@@ -38,15 +53,9 @@ func main() {
 
 	select {
 	case <-tickerPull.C:
-		glog.Infof("ticker pull")
-		nics, err := ptputils.DiscoverPTPDevices()
-		if err != nil {
-			glog.Infof("ticker pull failed")
-		} else {
-			glog.Infof("PTP capable NICs: %v", nics)
-		}
+		logging.Debugf("ticker pull")
 	case sig := <-sigCh:
-		glog.Infof("signal received, shutting down", sig)
+		logging.Debugf("signal received, shutting down", sig)
 		return
 	}
 }
