@@ -5,7 +5,6 @@ import (
 )
 
 // NodePTPDevSpec defines the desired state of NodePTPDev
-// +k8s:openapi-gen=true
 type NodePTPDevSpec struct {
 }
 
@@ -15,15 +14,14 @@ type PTPDevice struct {
 }
 
 // NodePTPDevStatus defines the observed state of NodePTPDev
-// +k8s:openapi-gen=true
 type NodePTPDevStatus struct {
 	PTPDevices	[]PTPDevice	`json:"ptpDevices"`
 }
 
+// +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // NodePTPDev is the Schema for the nodeptpdevs API
-// +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
 type NodePTPDev struct {
         metav1.TypeMeta   `json:",inline"`

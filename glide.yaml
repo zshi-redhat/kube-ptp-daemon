@@ -1,0 +1,19 @@
+package: github.com/zshi-redhat/kube-ptp-daemon
+import:
+- package: github.com/jaypipes/ghw
+  version: ^0.4.0
+- package: github.com/pkg/errors
+  version: ^0.8.1
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/api/errors
+  - pkg/apis/meta/v1
+- package: k8s.io/client-go
+  version: ^12.0.0
+  subpackages:
+  - kubernetes
+  - rest
+  - tools/clientcmd
+- package: k8s.io/code-generator
+- package: k8s.io/gengo
+- package: golang.org/x/tools
