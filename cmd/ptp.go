@@ -12,9 +12,11 @@ import (
 
 	"github.com/zshi-redhat/kube-ptp-daemon/logging"
 	ptputils "github.com/zshi-redhat/kube-ptp-daemon/pkg/utils"
-
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
+        "k8s.io/apimachinery/pkg/api/errors"
+        metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+        "k8s.io/client-go/kubernetes"
+        "k8s.io/client-go/rest"
+        "k8s.io/client-go/tools/clientcmd"
 )
 
 const (
@@ -59,6 +61,46 @@ func getConfig() (*rest.Config, error) {
         return nil, fmt.Errorf("Could not locate a kubeconfig")
 }
 
+func nodeLabelsGet(clientset *kubernetes.Clientset) (map[string]string, error) {
+        nodeName := os.Getenv("PTP_NODE_NAME")
+        if len(nodeName) > 0 {
+                logging.Debugf("node name: %s", nodeName)
+        } else {
+                return nil, fmt.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
+        }
+        node, err := clientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+        if errors.IsNotFound(err) {
+                return nil, fmt.Errorf("Node %s not found", nodeName)
+        } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
+                return nil, fmt.Errorf("Error getting node %s: %v", nodeName, statusError.ErrStatus.Message)
+        }
+        if err != nil {
+                return nil, err
+        }
+
+        return node.Labels, nil
+}
+
+func nodePTPStatusUpdate(clientset *kubernetes.Clientset) (map[string]string, error) {
+	nodeName := os.Getenv("PTP_NODE_NAME")
+        if len(nodeName) > 0 {
+                logging.Debugf("node name: %s", nodeName)
+        } else {
+                return nil, fmt.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
+        }
+        node, err := clientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
+        if errors.IsNotFound(err) {
+                return nil, fmt.Errorf("Node %s not found", nodeName)
+        } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
+                return nil, fmt.Errorf("Error getting node %s: %v", nodeName, statusError.ErrStatus.Message)
+        }
+        if err != nil {
+                return nil, err
+        }
+
+        return node.Labels, nil
+}
+
 func main() {
 	cp := &cliParams{}
 	flag.Parse()
@@ -77,6 +119,12 @@ func main() {
 	}
 	logging.Debugf("kubeconfig: %v", config)
 
+        clientset, err := kubernetes.NewForConfig(config)
+        if err != nil {
+                logging.Debugf("cannot create new config for clientset: %v", err)
+                return
+        }
+
 	nics, err := ptputils.DiscoverPTPDevices()
 	if err != nil {
 		logging.Debugf("discover PTP device failed: %v", err)
@@ -90,11 +138,19 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	select {
-	case <-tickerPull.C:
-		logging.Debugf("ticker pull")
-	case sig := <-sigCh:
-		logging.Debugf("signal received, shutting down", sig)
-		return
+	for {
+		select {
+		case <-tickerPull.C:
+			logging.Debugf("ticker pull")
+			labels, err := nodeLabelsGet(clientset)
+			if err != nil {
+				logging.Debugf("get node labels failed: %v", err)
+			} else {
+				logging.Debugf("node labels: %v", labels)
+			}
+		case sig := <-sigCh:
+			logging.Debugf("signal received, shutting down", sig)
+			return
+		}
 	}
 }
