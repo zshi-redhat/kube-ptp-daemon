@@ -26,11 +26,36 @@ import (
 const (
 	defaultUpdateInterval = 5
 	defaultLogLevel       = "debug"
+	ptpNamespace	      = "ptp"
 )
 
 type cliParams struct {
 	updateInterval	int
 	logLevel	string
+}
+
+type Daemon struct {
+        // name is the node name.
+        nodeName      string
+        namespace string
+
+        ptpClient ptpclient.Interface
+        // kubeClient allows interaction with Kubernetes, including the node we are running on.
+        kubeClient *kubernetes.Clientset
+}
+
+func NewDaemon(
+        nodeName string,
+	namespace string,
+        client ptpclient.Interface,
+        kubeClient *kubernetes.Clientset,
+) *Daemon {
+        return &Daemon{
+                nodeName:	nodeName,
+		namespace:	namespace,
+                ptpClient:	client,
+                kubeClient:	kubeClient,
+        }
 }
 
 // Parse Command line flags
@@ -85,7 +110,7 @@ func nodeLabelsGet(clientset *kubernetes.Clientset) (map[string]string, error) {
         return node.Labels, nil
 }
 
-func nodePTPStatusUpdate(obj interface{}) {
+func (dn *Daemon) nodePTPStatusAdd(obj interface{}) {
 	nodeName := os.Getenv("PTP_NODE_NAME")
         if len(nodeName) > 0 {
                 logging.Debugf("node name: %s", nodeName)
@@ -94,6 +119,19 @@ func nodePTPStatusUpdate(obj interface{}) {
         }
 	nodePTPDev := obj.(*ptpv1.NodePTPDev)
 	logging.Debugf("nodePTPStatusUpdate(), nodePTPDev: %v", nodePTPDev)
+}
+
+func (dn *Daemon) nodePTPStatusUpdate(oldStat, newStat interface{}) {
+	nodeName := os.Getenv("PTP_NODE_NAME")
+        if len(nodeName) > 0 {
+                logging.Debugf("node name: %s", nodeName)
+        } else {
+                logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
+        }
+	oldNodePTPDev := oldStat.(*ptpv1.NodePTPDev)
+	newNodePTPDev := newStat.(*ptpv1.NodePTPDev)
+	logging.Debugf("nodePTPStatusUpdate(), oldNodePTPDev: %v", oldNodePTPDev)
+	logging.Debugf("nodePTPStatusUpdate(), newNodePTPDev: %v", newNodePTPDev)
 }
 
 func main() {
@@ -126,11 +164,17 @@ func main() {
 		return
 	}
 
-	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(ptpClient, time.Second*30)
+	daemon := NewDaemon(os.Getenv("PTP_NODE_NAME"), ptpNamespace, ptpClient, kubeClient)
+
+	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(
+		ptpClient, time.Second*30, ptpNamespace,
+                func(lo *metav1.ListOptions) {
+                        lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
+                },)
 	ptpInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
         ptpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-                AddFunc:    nodePTPStatusUpdate,
-                UpdateFunc: nodePTPStatusUpdate,
+                AddFunc:    daemon.nodePTPStatusAdd,
+                UpdateFunc: daemon.nodePTPStatusUpdate,
         })
 
 	time.Sleep(5 * time.Second)
