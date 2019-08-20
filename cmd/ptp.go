@@ -16,7 +16,11 @@ import (
         metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
         "k8s.io/client-go/kubernetes"
         "k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/cache"
         "k8s.io/client-go/tools/clientcmd"
+	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
+	ptpclient "github.com/zshi-redhat/kube-ptp-daemon/pkg/client/clientset/versioned"
+	ptpinformer "github.com/zshi-redhat/kube-ptp-daemon/pkg/client/informers/externalversions"
 )
 
 const (
@@ -81,24 +85,15 @@ func nodeLabelsGet(clientset *kubernetes.Clientset) (map[string]string, error) {
         return node.Labels, nil
 }
 
-func nodePTPStatusUpdate(clientset *kubernetes.Clientset) (map[string]string, error) {
+func nodePTPStatusUpdate(obj interface{}) {
 	nodeName := os.Getenv("PTP_NODE_NAME")
         if len(nodeName) > 0 {
                 logging.Debugf("node name: %s", nodeName)
         } else {
-                return nil, fmt.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
+                logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
         }
-        node, err := clientset.CoreV1().Nodes().Get(nodeName, metav1.GetOptions{})
-        if errors.IsNotFound(err) {
-                return nil, fmt.Errorf("Node %s not found", nodeName)
-        } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-                return nil, fmt.Errorf("Error getting node %s: %v", nodeName, statusError.ErrStatus.Message)
-        }
-        if err != nil {
-                return nil, err
-        }
-
-        return node.Labels, nil
+	nodePTPDev := obj.(*ptpv1.NodePTPDev)
+	logging.Debugf("nodePTPStatusUpdate(), nodePTPDev: %v", nodePTPDev)
 }
 
 func main() {
@@ -112,18 +107,37 @@ func main() {
 
 	logging.Debugf("Resync period set to: %d [s]", cp.updateInterval)
 
-	config, err := getConfig()
+	cfg, err := getConfig()
 	if err != nil {
 		logging.Errorf("get kubeconfig failed: %v", err)
 		return
 	}
-	logging.Debugf("kubeconfig: %v", config)
+	logging.Debugf("kubeconfig: %v", cfg)
 
-        clientset, err := kubernetes.NewForConfig(config)
+        kubeClient, err := kubernetes.NewForConfig(cfg)
         if err != nil {
-                logging.Debugf("cannot create new config for clientset: %v", err)
+                logging.Debugf("cannot create new config for kubeClient: %v", err)
                 return
         }
+
+	ptpClient, err := ptpclient.NewForConfig(cfg)
+	if err != nil {
+		logging.Debugf("cannot create new config for ptpClient: %v", err)
+		return
+	}
+
+	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(ptpClient, time.Second*30)
+	ptpInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
+        ptpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+                AddFunc:    nodePTPStatusUpdate,
+                UpdateFunc: nodePTPStatusUpdate,
+        })
+
+	time.Sleep(5 * time.Second)
+	stopCh := make(chan struct{})
+	defer close(stopCh)
+
+	go ptpInformer.Run(stopCh)
 
 	nics, err := ptputils.DiscoverPTPDevices()
 	if err != nil {
@@ -142,7 +156,7 @@ func main() {
 		select {
 		case <-tickerPull.C:
 			logging.Debugf("ticker pull")
-			labels, err := nodeLabelsGet(clientset)
+			labels, err := nodeLabelsGet(kubeClient)
 			if err != nil {
 				logging.Debugf("get node labels failed: %v", err)
 			} else {
