@@ -58,16 +58,20 @@ func (dn *Daemon) Run() error {
                 },)
 	ptpInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
         ptpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-                AddFunc:    dn.nodePTPDevAdd,
-                UpdateFunc: dn.nodePTPDevUpdate,
+                AddFunc:    dn.nodePTPDevAddHandler,
+                UpdateFunc: dn.nodePTPDevUpdateHandler,
         })
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(2 * time.Second)
 	go ptpInformer.Run(dn.stopCh)
+
+	time.Sleep(2 * time.Second)
+	// create per-node resource ptpv1.NodePTPDev
+	dn.createNodePTPDevResource()
 	return nil
 }
 
-func (dn *Daemon) nodePTPDevAdd(obj interface{}) {
+func (dn *Daemon) nodePTPDevAddHandler(obj interface{}) {
 	nodePTPDev := obj.(*ptpv1.NodePTPDev)
 	logging.Debugf("nodePTPDevAdd(), nodePTPDev: %v", nodePTPDev)
 
@@ -85,7 +89,7 @@ func (dn *Daemon) nodePTPDevAdd(obj interface{}) {
 	dn.updateNodePTPDevStatus(nodePTPDev)
 }
 
-func (dn *Daemon) nodePTPDevUpdate(oldStat, newStat interface{}) {
+func (dn *Daemon) nodePTPDevUpdateHandler(oldStat, newStat interface{}) {
 	oldNodePTPDev := oldStat.(*ptpv1.NodePTPDev)
 	newNodePTPDev := newStat.(*ptpv1.NodePTPDev)
 
@@ -103,11 +107,29 @@ func (dn *Daemon) nodePTPDevUpdate(oldStat, newStat interface{}) {
 	}
 }
 
-func (dn *Daemon) updateNodePTPDevStatus(ptpDevs *ptpv1.NodePTPDev) {
-	_, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).UpdateStatus(ptpDevs)
+func (dn *Daemon) createNodePTPDevResource() {
+	ptpDev := &ptpv1.NodePTPDev{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: dn.nodeName,
+				Namespace: PtpNamespace,
+			},
+			Spec: ptpv1.NodePTPDevSpec{
+				PTPDevices: []ptpv1.PTPDevice{},
+			},
+		}
+	createdPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Create(ptpDev)
+	if err != nil {
+		logging.Errorf("createNodePTPDevResource() failed: %v", err)
+	}
+	logging.Debugf("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
+}
+
+func (dn *Daemon) updateNodePTPDevStatus(ptpDev *ptpv1.NodePTPDev) {
+	updatedPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).UpdateStatus(ptpDev)
 	if err != nil {
 		logging.Errorf("updateNodePTPDevStatus() failed: %v", err)
 	}
+	logging.Debugf("updateNodePTPDevStatus(), status successfull updated to: %v", updatedPTPDev.Status)
 }
 
 func (dn *Daemon) getNodeLabels(clientset *kubernetes.Clientset) (map[string]string, error) {
