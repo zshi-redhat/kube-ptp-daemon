@@ -14,6 +14,12 @@ import:
   - kubernetes
   - rest
   - tools/clientcmd
+- package: golang.org/x/tools
+- package: github.com/google/go-cmp
+  version: ^0.3.1
+  subpackages:
+  - cmp
 - package: k8s.io/code-generator
 - package: k8s.io/gengo
-- package: golang.org/x/tools
+- package: k8s.io/klog
+  version: ^0.4.0
