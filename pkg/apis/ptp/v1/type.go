@@ -6,16 +6,17 @@ import (
 
 // NodePTPDevSpec defines the desired state of NodePTPDev
 type NodePTPDevSpec struct {
+	PTPDevices	[]PTPDevice	`json:"ptpDevices,omitempty"`
 }
 
 type PTPDevice struct {
-	Name		string	`json:"name"`
-	Profile		string	`json:"profile"`
+	Name		string	`json:"name,omitempty"`
+	Profile		string	`json:"profile,omitempty"`
 }
 
 // NodePTPDevStatus defines the observed state of NodePTPDev
 type NodePTPDevStatus struct {
-	PTPDevices	[]PTPDevice	`json:"ptpDevices"`
+	PTPDevices	[]PTPDevice	`json:"ptpDevices,omitempty"`
 }
 
 // +genclient

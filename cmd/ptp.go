@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	defaultUpdateInterval = 5
+	defaultUpdateInterval = 60
 	defaultLogLevel       = "debug"
 	ptpNamespace	      = "ptp"
 )
@@ -113,7 +113,7 @@ func nodeLabelsGet(clientset *kubernetes.Clientset) (map[string]string, error) {
 func (dn *Daemon) nodePTPStatusAdd(obj interface{}) {
 	nodeName := os.Getenv("PTP_NODE_NAME")
         if len(nodeName) > 0 {
-                logging.Debugf("node name: %s", nodeName)
+                logging.Debugf("PTPstatus Add, node name: %s", nodeName)
         } else {
                 logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
         }
@@ -124,7 +124,7 @@ func (dn *Daemon) nodePTPStatusAdd(obj interface{}) {
 func (dn *Daemon) nodePTPStatusUpdate(oldStat, newStat interface{}) {
 	nodeName := os.Getenv("PTP_NODE_NAME")
         if len(nodeName) > 0 {
-                logging.Debugf("node name: %s", nodeName)
+                logging.Debugf("PTPstatus Update, node name: %s", nodeName)
         } else {
                 logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
         }
@@ -165,9 +165,10 @@ func main() {
 	}
 
 	daemon := NewDaemon(os.Getenv("PTP_NODE_NAME"), ptpNamespace, ptpClient, kubeClient)
+	logging.Debugf("daemon instance: %v", daemon)
 
 	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(
-		ptpClient, time.Second*30, ptpNamespace,
+		ptpClient, time.Second*3, ptpNamespace,
                 func(lo *metav1.ListOptions) {
                         lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
                 },)
