@@ -1,0 +1,42 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ptp-service-account
+  namespace: ptp
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: ptp-cluster-role
+rules:
+- apiGroups:
+  - ""
+  - k8s.cni.cncf.io
+  resources:
+  - nodes
+  - pods
+  - network-attachment-definitions
+  verbs:
+  - '*'
+- apiGroups:
+  - ptp.openshift.io
+  resources:
+  - nodeptpstatuses
+  verbs:
+  - '*'
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ptp-cluster-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: ptp-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: ptp-service-account
+  namespace: ptp

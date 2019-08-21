@@ -110,28 +110,40 @@ func nodeLabelsGet(clientset *kubernetes.Clientset) (map[string]string, error) {
         return node.Labels, nil
 }
 
-func (dn *Daemon) nodePTPStatusAdd(obj interface{}) {
-	nodeName := os.Getenv("PTP_NODE_NAME")
-        if len(nodeName) > 0 {
-                logging.Debugf("PTPstatus Add, node name: %s", nodeName)
-        } else {
-                logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
-        }
-	nodePTPDev := obj.(*ptpv1.NodePTPDev)
-	logging.Debugf("nodePTPStatusUpdate(), nodePTPDev: %v", nodePTPDev)
+func (dn *Daemon) updateNodePTPDevStatus(ptpDevs *ptpv1.NodePTPDev) {
+	_, err := dn.ptpClient.PtpV1().NodePTPDevs(ptpNamespace).UpdateStatus(ptpDevs.Status)
+	if err != nil {
+		logging.Errorf("updateNodePTPDevStatus() failed: %v", err)
+	}
 }
 
-func (dn *Daemon) nodePTPStatusUpdate(oldStat, newStat interface{}) {
-	nodeName := os.Getenv("PTP_NODE_NAME")
-        if len(nodeName) > 0 {
-                logging.Debugf("PTPstatus Update, node name: %s", nodeName)
-        } else {
-                logging.Errorf("Error getting node name, environment var PTP_NODE_NAME not set")
-        }
+func (dn *Daemon) nodePTPDevAdd(obj interface{}) {
+	nodePTPDev := obj.(*ptpv1.NodePTPDev)
+	logging.Debugf("nodePTPDevAdd(), nodePTPDev: %v", nodePTPDev)
+
+	hostDevs, err := ptputils.DiscoverPTPDevices()
+	if err != nil {
+		logging.Debugf("discover PTP devices failed: %v", err)
+		return
+	}
+	logging.Debugf("PTP capable NICs: %v", hostDevs)
+
+	for _, dev := range hostDevs {
+		nodePTPDev.Status.PTPDevices = append(nodePTPDev.Status.PTPDevices,
+			ptpv1.PTPDevice{Name: dev, Profile: ""})
+	}
+	dn.updateNodePTPDevStatus(nodePTPDev)
+}
+
+func (dn *Daemon) nodePTPDevUpdate(oldStat, newStat interface{}) {
 	oldNodePTPDev := oldStat.(*ptpv1.NodePTPDev)
 	newNodePTPDev := newStat.(*ptpv1.NodePTPDev)
-	logging.Debugf("nodePTPStatusUpdate(), oldNodePTPDev: %v", oldNodePTPDev)
-	logging.Debugf("nodePTPStatusUpdate(), newNodePTPDev: %v", newNodePTPDev)
+
+	if oldNodePTPDev.GetObjectMeta().GetGeneration() ==
+		newNodePTPDev.GetObjectMeta().GetGeneration() { return }
+
+	logging.Debugf("nodePTPDevUpdate(), oldNodePTPDev: %v", oldNodePTPDev)
+	logging.Debugf("nodePTPDevUpdate(), newNodePTPDev: %v", newNodePTPDev)
 }
 
 func main() {
@@ -168,14 +180,14 @@ func main() {
 	logging.Debugf("daemon instance: %v", daemon)
 
 	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(
-		ptpClient, time.Second*3, ptpNamespace,
+		ptpClient, time.Second*30, ptpNamespace,
                 func(lo *metav1.ListOptions) {
                         lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
                 },)
 	ptpInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
         ptpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-                AddFunc:    daemon.nodePTPStatusAdd,
-                UpdateFunc: daemon.nodePTPStatusUpdate,
+                AddFunc:    daemon.nodePTPDevAdd,
+                UpdateFunc: daemon.nodePTPDevUpdate,
         })
 
 	time.Sleep(5 * time.Second)

@@ -11,3 +11,5 @@ spec:
     plural: nodeptpdevs
     singular: nodeptpdev
   scope: Namespaced
+  subresources:
+    status: {}

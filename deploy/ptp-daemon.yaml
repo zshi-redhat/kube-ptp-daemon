@@ -1,0 +1,33 @@
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ptp-daemon
+  namespace: ptp
+spec:
+  selector:
+    matchLabels:
+      app: ptp-daemon
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: ptp-daemon
+    spec:
+      hostNetwork: true
+      hostPID: true
+      nodeSelector:
+        beta.kubernetes.io/os: linux
+      serviceAccountName: ptp-service-account
+      containers:
+      - name: ptp-daemon-container
+        securityContext:
+          privileged: true
+        image: zenghui/ptp
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PTP_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
