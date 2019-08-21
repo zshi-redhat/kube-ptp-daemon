@@ -3,7 +3,7 @@ ADD . /usr/src/kube-ptp-daemon
 
 WORKDIR /usr/src/kube-ptp-daemon
 
-RUN yum install -y ethtool make hwdata golang
+RUN yum install -y linuxptp ethtool make hwdata golang
 RUN make clean && make
 
 WORKDIR /
