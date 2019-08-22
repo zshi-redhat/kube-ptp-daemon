@@ -24,8 +24,8 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// NodePTPConves returns a NodePTPConfInformer.
-	NodePTPConves() NodePTPConfInformer
+	// NodePTPCfgs returns a NodePTPCfgInformer.
+	NodePTPCfgs() NodePTPCfgInformer
 	// NodePTPDevs returns a NodePTPDevInformer.
 	NodePTPDevs() NodePTPDevInformer
 }
@@ -41,9 +41,9 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// NodePTPConves returns a NodePTPConfInformer.
-func (v *version) NodePTPConves() NodePTPConfInformer {
-	return &nodePTPConfInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// NodePTPCfgs returns a NodePTPCfgInformer.
+func (v *version) NodePTPCfgs() NodePTPCfgInformer {
+	return &nodePTPCfgInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // NodePTPDevs returns a NodePTPDevInformer.

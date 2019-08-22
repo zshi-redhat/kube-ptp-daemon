@@ -4,8 +4,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NodePTPConfSpec defines the desired state of NodePTPConf
-type NodePTPConfSpec struct {
+// NodePTPCfgSpec defines the desired state of NodePTPCfg
+type NodePTPCfgSpec struct {
 	Profile		[]NodePTPProfile	`json:"profile"`
 	Recommend	[]NodePTPRecommend	`json:"recommend"`
 }
@@ -29,8 +29,8 @@ type NodePTPMatchRule struct {
 	NodeName	string	`json:"nodeName,omitempty"`
 }
 
-// NodePTPConfStatus defines the observed state of NodePTPConf
-type NodePTPConfStatus struct {
+// NodePTPCfgStatus defines the observed state of NodePTPCfg
+type NodePTPCfgStatus struct {
 	MatchList	[]NodeMatchList	`json:"matchList,omitempty"`
 }
 
@@ -42,21 +42,21 @@ type NodeMatchList struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// NodePTPConf is the Schema for the nodeptpconfs API
+// NodePTPCfg is the Schema for the nodeptpconfs API
 // +kubebuilder:subresource:status
-type NodePTPConf struct {
+type NodePTPCfg struct {
         metav1.TypeMeta   `json:",inline"`
         metav1.ObjectMeta `json:"metadata,omitempty"`
 
-        Spec   NodePTPConfSpec   `json:"spec,omitempty"`
-        Status NodePTPConfStatus `json:"status,omitempty"`
+        Spec   NodePTPCfgSpec   `json:"spec,omitempty"`
+        Status NodePTPCfgStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// NodePTPConfList contains a list of NodePTPConf
-type NodePTPConfList struct {
+// NodePTPCfgList contains a list of NodePTPCfg
+type NodePTPCfgList struct {
         metav1.TypeMeta `json:",inline"`
         metav1.ListMeta `json:"metadata,omitempty"`
-        Items           []NodePTPConf `json:"items"`
+        Items           []NodePTPCfg `json:"items"`
 }

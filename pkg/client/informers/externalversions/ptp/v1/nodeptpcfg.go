@@ -31,59 +31,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// NodePTPConfInformer provides access to a shared informer and lister for
-// NodePTPConves.
-type NodePTPConfInformer interface {
+// NodePTPCfgInformer provides access to a shared informer and lister for
+// NodePTPCfgs.
+type NodePTPCfgInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1.NodePTPConfLister
+	Lister() v1.NodePTPCfgLister
 }
 
-type nodePTPConfInformer struct {
+type nodePTPCfgInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewNodePTPConfInformer constructs a new informer for NodePTPConf type.
+// NewNodePTPCfgInformer constructs a new informer for NodePTPCfg type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewNodePTPConfInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredNodePTPConfInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewNodePTPCfgInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredNodePTPCfgInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredNodePTPConfInformer constructs a new informer for NodePTPConf type.
+// NewFilteredNodePTPCfgInformer constructs a new informer for NodePTPCfg type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredNodePTPConfInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredNodePTPCfgInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PtpV1().NodePTPConves(namespace).List(options)
+				return client.PtpV1().NodePTPCfgs(namespace).List(options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.PtpV1().NodePTPConves(namespace).Watch(options)
+				return client.PtpV1().NodePTPCfgs(namespace).Watch(options)
 			},
 		},
-		&ptpv1.NodePTPConf{},
+		&ptpv1.NodePTPCfg{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *nodePTPConfInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredNodePTPConfInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *nodePTPCfgInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredNodePTPCfgInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *nodePTPConfInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&ptpv1.NodePTPConf{}, f.defaultInformer)
+func (f *nodePTPCfgInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&ptpv1.NodePTPCfg{}, f.defaultInformer)
 }
 
-func (f *nodePTPConfInformer) Lister() v1.NodePTPConfLister {
-	return v1.NewNodePTPConfLister(f.Informer().GetIndexer())
+func (f *nodePTPCfgInformer) Lister() v1.NodePTPCfgLister {
+	return v1.NewNodePTPCfgLister(f.Informer().GetIndexer())
 }

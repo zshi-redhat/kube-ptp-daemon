@@ -47,8 +47,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&NodePTPDev{},
 		&NodePTPDevList{},
-		&NodePTPConf{},
-		&NodePTPConfList{},
+		&NodePTPCfg{},
+		&NodePTPCfgList{},
 	)
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil

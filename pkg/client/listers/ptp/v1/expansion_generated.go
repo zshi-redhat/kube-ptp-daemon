@@ -18,13 +18,13 @@ limitations under the License.
 
 package v1
 
-// NodePTPConfListerExpansion allows custom methods to be added to
-// NodePTPConfLister.
-type NodePTPConfListerExpansion interface{}
+// NodePTPCfgListerExpansion allows custom methods to be added to
+// NodePTPCfgLister.
+type NodePTPCfgListerExpansion interface{}
 
-// NodePTPConfNamespaceListerExpansion allows custom methods to be added to
-// NodePTPConfNamespaceLister.
-type NodePTPConfNamespaceListerExpansion interface{}
+// NodePTPCfgNamespaceListerExpansion allows custom methods to be added to
+// NodePTPCfgNamespaceLister.
+type NodePTPCfgNamespaceListerExpansion interface{}
 
 // NodePTPDevListerExpansion allows custom methods to be added to
 // NodePTPDevLister.
