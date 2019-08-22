@@ -26,12 +26,17 @@ import (
 
 type PtpV1Interface interface {
 	RESTClient() rest.Interface
+	NodePTPConvesGetter
 	NodePTPDevsGetter
 }
 
 // PtpV1Client is used to interact with features provided by the ptp.openshift.io group.
 type PtpV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *PtpV1Client) NodePTPConves(namespace string) NodePTPConfInterface {
+	return newNodePTPConves(c, namespace)
 }
 
 func (c *PtpV1Client) NodePTPDevs(namespace string) NodePTPDevInterface {

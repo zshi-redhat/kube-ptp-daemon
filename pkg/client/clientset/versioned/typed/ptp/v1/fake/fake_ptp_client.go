@@ -28,6 +28,10 @@ type FakePtpV1 struct {
 	*testing.Fake
 }
 
+func (c *FakePtpV1) NodePTPConves(namespace string) v1.NodePTPConfInterface {
+	return &FakeNodePTPConves{c, namespace}
+}
+
 func (c *FakePtpV1) NodePTPDevs(namespace string) v1.NodePTPDevInterface {
 	return &FakeNodePTPDevs{c, namespace}
 }

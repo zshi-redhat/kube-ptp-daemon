@@ -18,4 +18,6 @@ limitations under the License.
 
 package v1
 
+type NodePTPConfExpansion interface{}
+
 type NodePTPDevExpansion interface{}

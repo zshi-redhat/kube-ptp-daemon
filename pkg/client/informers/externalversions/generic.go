@@ -53,6 +53,8 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=ptp.openshift.io, Version=v1
+	case v1.SchemeGroupVersion.WithResource("nodeptpconves"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Ptp().V1().NodePTPConves().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("nodeptpdevs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ptp().V1().NodePTPDevs().Informer()}, nil
 
