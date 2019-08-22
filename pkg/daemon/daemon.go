@@ -2,7 +2,6 @@ package daemon
 
 import(
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/zshi-redhat/kube-ptp-daemon/logging"
@@ -54,7 +53,7 @@ func (dn *Daemon) Run() error {
 	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(
 		dn.ptpClient, time.Second*30, PtpNamespace,
                 func(lo *metav1.ListOptions) {
-                        lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
+//                        lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
                 },)
 	ptpDevInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
         ptpDevInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -161,9 +160,19 @@ func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
 		logging.Errorf("failed to list NodePTPCfgs: %v", err)
 		return
 	}
-	for _, conf := range confList.Items {
-		logging.Debugf("nodePTPCfgAddHandler(), nodePTPCfg: %+v", conf)
+
+	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
+	if err != nil {
+		logging.Debugf("get node labels failed: %v", err)
+	} else {
+		logging.Debugf("node labels: %v", nodeLabels)
 	}
+
+	profile, err := getRecommendProfileName(confList, dn.nodeName, nodeLabels)
+	if err != nil {
+		logging.Errorf("get recommend profile name failed: %v", err)
+	}
+	logging.Debugf("recommend profile name: %v", profile)
 }
 
 func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {

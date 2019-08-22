@@ -1,7 +1,7 @@
 apiVersion: ptp.openshift.io/v1
-kind: NodePTPConf
+kind: NodePTPCfg
 metadata:
-  name: example-nodeptpconf
+  name: example-nodeptpcfg
   namespace: ptp
 spec:
   ptpDevices:

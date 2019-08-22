@@ -11,22 +11,22 @@ type NodePTPCfgSpec struct {
 }
 
 type NodePTPProfile struct {
-	Name		string		`json:"name"`
+	Name		*string		`json:"name"`
 	Interfaces	[]string	`json:"interfaces"`
-	Ptp4lOpts	string		`json:"ptp4lOpts,omitempty"`
-	Phc2sysOpts	string		`json:"phc2sysOpts,omitempty"`
+	Ptp4lOpts	*string		`json:"ptp4lOpts,omitempty"`
+	Phc2sysOpts	*string		`json:"phc2sysOpts,omitempty"`
 	Ptp4lConf	*string		`json:"ptp4lConf,omitempty"`
 }
 
 type NodePTPRecommend struct {
-	Profile		string			`json:"profile"`
-	Priority	int64			`json:"priority"`
+	Profile		*string			`json:"profile"`
+	Priority	*int64			`json:"priority"`
 	Match		[]NodePTPMatchRule	`json:"match,omitempty"`
 }
 
 type NodePTPMatchRule struct {
-	NodeLabel	string	`json:"nodeLabel,omitempty"`
-	NodeName	string	`json:"nodeName,omitempty"`
+	NodeLabel	*string	`json:"nodeLabel,omitempty"`
+	NodeName	*string	`json:"nodeName,omitempty"`
 }
 
 // NodePTPCfgStatus defines the observed state of NodePTPCfg
@@ -35,8 +35,8 @@ type NodePTPCfgStatus struct {
 }
 
 type NodeMatchList struct {
-	NodeName	string	`json:"nodeName"`
-	Profile		string	`json:"profile"`
+	NodeName	*string	`json:"nodeName"`
+	Profile		*string	`json:"profile"`
 }
 
 // +genclient
