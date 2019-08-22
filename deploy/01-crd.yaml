@@ -1,3 +1,4 @@
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -10,6 +11,23 @@ spec:
     listKind: NodePTPDevList
     plural: nodeptpdevs
     singular: nodeptpdev
+  scope: Namespaced
+  subresources:
+    status: {}
+
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: nodeptpconfs.ptp.openshift.io
+spec:
+  group: ptp.openshift.io
+  version: v1
+  names:
+    kind: NodePTPConf
+    listKind: NodePTPConfList
+    plural: nodeptpconfs
+    singular: nodeptpconf
   scope: Namespaced
   subresources:
     status: {}

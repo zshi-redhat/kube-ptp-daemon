@@ -56,14 +56,21 @@ func (dn *Daemon) Run() error {
                 func(lo *metav1.ListOptions) {
                         lo.FieldSelector = "metadata.name=" + os.Getenv("PTP_NODE_NAME")
                 },)
-	ptpInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
-        ptpInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+	ptpDevInformer := ptpInformerFactory.Ptp().V1().NodePTPDevs().Informer()
+        ptpDevInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
                 AddFunc:    dn.nodePTPDevAddHandler,
                 UpdateFunc: dn.nodePTPDevUpdateHandler,
         })
 
+	ptpConfInformer := ptpInformerFactory.Ptp().V1().NodePTPConves().Informer()
+        ptpConfInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
+                AddFunc:    dn.nodePTPConfAddHandler,
+                UpdateFunc: dn.nodePTPConfUpdateHandler,
+        })
+
 	time.Sleep(2 * time.Second)
-	go ptpInformer.Run(dn.stopCh)
+	go ptpDevInformer.Run(dn.stopCh)
+	go ptpConfInformer.Run(dn.stopCh)
 
 	time.Sleep(2 * time.Second)
 	// create per-node resource ptpv1.NodePTPDev
@@ -144,3 +151,45 @@ func (dn *Daemon) getNodeLabels(clientset *kubernetes.Clientset) (map[string]str
         }
         return node.Labels, nil
 }
+
+func (dn *Daemon) nodePTPConfAddHandler(obj interface{}) {
+	nodePTPConf := obj.(*ptpv1.NodePTPConf)
+	logging.Debugf("nodePTPConfAdd(), nodePTPConf: %v", nodePTPConf)
+
+	confList, err := dn.ptpClient.PtpV1().NodePTPConves(PtpNamespace).List(metav1.ListOptions{})
+	if err != nil {
+		logging.Errorf("failed to list NodePTPConfs: %v", err)
+		return
+	}
+	for _, conf := range confList.Items {
+		logging.Debugf("nodePTPConfAddHandler(), nodePTPConf: %+v", conf)
+	}
+}
+
+func (dn *Daemon) nodePTPConfUpdateHandler(oldStat, newStat interface{}) {
+	oldNodePTPConf := oldStat.(*ptpv1.NodePTPConf)
+	newNodePTPConf := newStat.(*ptpv1.NodePTPConf)
+
+	if oldNodePTPConf.GetObjectMeta().GetGeneration() ==
+		newNodePTPConf.GetObjectMeta().GetGeneration() { return }
+
+	logging.Debugf("nodePTPConfUpdate(), oldNodePTPConf: %v", oldNodePTPConf)
+	logging.Debugf("nodePTPConfUpdate(), newNodePTPConf: %v", newNodePTPConf)
+
+	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
+	if err != nil {
+		logging.Debugf("get node labels failed: %v", err)
+	} else {
+		logging.Debugf("node labels: %v", nodeLabels)
+	}
+}
+
+func (dn *Daemon) updateNodePTPConfStatus(ptpConf *ptpv1.NodePTPConf) {
+	updatedPTPConf, err := dn.ptpClient.PtpV1().NodePTPConves(PtpNamespace).UpdateStatus(ptpConf)
+	if err != nil {
+		logging.Errorf("updateNodePTPConfStatus() failed: %v", err)
+	}
+	logging.Debugf("updateNodePTPConfStatus(), config status successfull updated to: %v",
+		updatedPTPConf.Status)
+}
+

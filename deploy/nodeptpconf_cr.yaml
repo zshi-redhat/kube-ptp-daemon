@@ -1,0 +1,16 @@
+apiVersion: ptp.openshift.io/v1
+kind: NodePTPConf
+metadata:
+  name: example-nodeptpconf
+  namespace: ptp
+spec:
+  ptpDevices:
+  - profile:
+      name: "profile1"
+      interfaces: "eth0 eth1"
+    recommend:
+      profile: "profile1"
+      priority: 4
+      match:
+      - nodeLabel: "123"
+        nodeName: "nfvpe-24"
