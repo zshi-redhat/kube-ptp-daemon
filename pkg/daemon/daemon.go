@@ -156,15 +156,24 @@ func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
 	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
 	if err != nil {
 		logging.Debugf("get node labels failed: %v", err)
-	} else {
-		logging.Debugf("node labels: %+v", nodeLabels)
+		return
 	}
+	logging.Debugf("node labels: %+v", nodeLabels)
 
-	cfgCurrent, cfgToUpdate, err := getCfgUpdate(confList, dn.nodeName, nodeLabels)
+	current, update, err := getCfgStatusUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
 		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
+		return
 	}
-	dn.updateNodePTPCfgStatus(cfgCurrent, cfgToUpdate)
+	dn.updateNodePTPCfgStatus(current, update)
+
+	nodeProfile, err := getRecommendProfileSpec(confList, dn.nodeName, nodeLabels)
+	if err != nil {
+		logging.Errorf("get recommend profile spec failed: %v", err)
+		return
+	}
+
+	applyNodePTPProfile(nodeProfile)
 }
 
 func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
@@ -186,31 +195,40 @@ func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
 	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
 	if err != nil {
 		logging.Debugf("get node labels failed: %v", err)
-	} else {
-		logging.Debugf("node labels: %+v", nodeLabels)
+		return
 	}
+	logging.Debugf("node labels: %+v", nodeLabels)
 
-	cfgCurrent, cfgToUpdate, err := getCfgUpdate(confList, dn.nodeName, nodeLabels)
+	current, update, err := getCfgStatusUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
 		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
+		return
 	}
-	dn.updateNodePTPCfgStatus(cfgCurrent, cfgToUpdate)
+	dn.updateNodePTPCfgStatus(current, update)
+
+	nodeProfile, err := getRecommendProfileSpec(confList, dn.nodeName, nodeLabels)
+	if err != nil {
+		logging.Errorf("get recommend profile spec failed: %v", err)
+		return
+	}
+
+	applyNodePTPProfile(nodeProfile)
 }
 
-func (dn *Daemon) updateNodePTPCfgStatus(current, toUpdate ptpv1.NodePTPCfg) {
-	if current.Name != "" && current.Name != toUpdate.Name {
-		updatedPTPCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&current)
+func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
+	if current.Name != "" && current.Name != update.Name {
+		updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&current)
 		if err != nil {
 			logging.Errorf("updateNodePTPCfgStatus() current failed: %v", err)
 			return
 		}
-		logging.Debugf("updateNodePTPCfgStatus() current successfully: %+v", updatedPTPCfg)
+		logging.Debugf("updateNodePTPCfgStatus() current successfully: %+v", updatedCfg)
 	}
 
-	updatedPTPCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&toUpdate)
+	updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&update)
 	if err != nil {
 		logging.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
 		return
 	}
-	logging.Debugf("updateNodePTPCfgStatus() toUpdate successfully: %+v", updatedPTPCfg)
+	logging.Debugf("updateNodePTPCfgStatus() toUpdate successfully: %+v", updatedCfg)
 }

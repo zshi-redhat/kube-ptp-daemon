@@ -7,7 +7,7 @@ import (
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
 
-func getCfgUpdate(
+func getCfgStatusUpdate(
 	ptpCfgList *ptpv1.NodePTPCfgList,
 	nodeName string,
 	nodeLabels map[string]string,
@@ -18,10 +18,10 @@ func getCfgUpdate(
 ) {
 	var (
 		cfgCurrent ptpv1.NodePTPCfg
-		cfgToUpdate ptpv1.NodePTPCfg
+		cfgUpdate ptpv1.NodePTPCfg
 	)
 
-	profileName, _ := getRecommendProfile(ptpCfgList, nodeName, nodeLabels)
+	profileName, _ := getRecommendProfileName(ptpCfgList, nodeName, nodeLabels)
 	logging.Debugf("getNodePTPCfgToUpdate(), profile name: %+v", profileName)
 	for _, cfg := range ptpCfgList.Items {
 		if cfg.Status.MatchList != nil {
@@ -44,17 +44,17 @@ func getCfgUpdate(
 							NodeName: &nodeName,
 							Profile: &profileName})
 					logging.Debugf("getNodePTPCfgToUpdate(), append toUpdate cfg: %+v", cfg)
-					cfgToUpdate = cfg
+					cfgUpdate = cfg
 				}
 			}
 		}
 	}
 	logging.Debugf("getNodePTPCfgToUpdate(), cfgCurrent: %+v", cfgCurrent)
-	logging.Debugf("getNodePTPCfgToUpdate(), cfgToUpdate: %+v", cfgToUpdate)
-	return cfgCurrent, cfgToUpdate, nil
+	logging.Debugf("getNodePTPCfgToUpdate(), cfgUpdate: %+v", cfgUpdate)
+	return cfgCurrent, cfgUpdate, nil
 }
 
-func getRecommendProfile(
+func getRecommendProfileName(
 	ptpCfgList *ptpv1.NodePTPCfgList,
 	nodeName string,
 	nodeLabels map[string]string,
@@ -103,6 +103,9 @@ func getRecommendProfile(
 
 				// don't return immediately when label matches
 				// chance is next Match item may hit NodeName
+
+				// return immediately when label matches
+				// this makes sure priority field is respected
 				for k, _ := range nodeLabels {
 					return *r.Profile, nil
 					if *m.NodeLabel == k {
@@ -116,4 +119,13 @@ func getRecommendProfile(
 		}
 	}
 	return "", nil
+}
+
+func getRecommendProfileSpec(
+	ptpCfgList *ptpv1.NodePTPCfgList,
+	nodeName string,
+	nodeLabels map[string]string,
+) ( ptpv1.NodePTPProfile, error ) {
+	var nodeProfile ptpv1.NodePTPProfile
+	return nodeProfile, nil
 }
