@@ -2,12 +2,12 @@ package daemon
 
 import (
 	"github.com/zshi-redhat/kube-ptp-daemon/logging"
-	ptputils "github.com/zshi-redhat/kube-ptp-daemon/pkg/utils"
+	ptpnetwork "github.com/zshi-redhat/kube-ptp-daemon/pkg/network"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
 
 func getDevStatusUpdate(nodePTPDev *ptpv1.NodePTPDev) (*ptpv1.NodePTPDev, error) {
-	hostDevs, err := ptputils.DiscoverPTPDevices()
+	hostDevs, err := ptpnetwork.DiscoverPTPDevices()
 	if err != nil {
 		logging.Errorf("discover PTP devices failed: %v", err)
 		return nodePTPDev, err
