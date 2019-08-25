@@ -20,16 +20,17 @@ const (
 
 type Daemon struct {
         // name is the node name.
-        nodeName      string
-        namespace string
+        nodeName	string
+        namespace	string
 
-        ptpClient ptpclient.Interface
+        ptpClient	ptpclient.Interface
         // kubeClient allows interaction with Kubernetes, including the node we are running on.
-        kubeClient *kubernetes.Clientset
+        kubeClient	*kubernetes.Clientset
 
+	ptpUpdate	*linuxPTPUpdate
 	// channel ensure daemon.Run() exit when main function exits.
 	// stopCh is created by main function and passed to Daemon via daemon.New()
-	stopCh <-chan struct{}
+	stopCh		<-chan struct{}
 }
 
 func New(
@@ -44,11 +45,19 @@ func New(
 		namespace:	namespace,
                 ptpClient:	client,
                 kubeClient:	kubeClient,
+		ptpUpdate:	&linuxPTPUpdate{updateCh: make(chan bool)},
 		stopCh:		stopCh,
         }
 }
 
 func (dn *Daemon) Run() error {
+	go NewLinuxPTP(
+		dn.nodeName,
+		dn.namespace,
+		dn.ptpUpdate,
+		dn.stopCh,
+	).Run()
+
 	ptpInformerFactory := ptpinformer.NewFilteredSharedInformerFactory(
 		dn.ptpClient, time.Second*30, PtpNamespace,
                 func(lo *metav1.ListOptions) {
@@ -160,20 +169,16 @@ func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
 	}
 	logging.Debugf("node labels: %+v", nodeLabels)
 
-	current, update, err := getCfgStatusUpdate(confList, dn.nodeName, nodeLabels)
+	nodeCfgUpdate, err := getNodePTPCfgUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
 		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
 		return
 	}
-	dn.updateNodePTPCfgStatus(current, update)
+	logging.Debugf("getNodePTPCfgUpdate() nodeCfgUpdate :+v", nodeCfgUpdate)
+	dn.updateNodePTPCfgStatus(nodeCfgUpdate.current, nodeCfgUpdate.update)
 
-	nodeProfile, err := getRecommendProfileSpec(confList, dn.nodeName, nodeLabels)
-	if err != nil {
-		logging.Errorf("get recommend profile spec failed: %v", err)
-		return
-	}
-
-	applyNodePTPProfile(nodeProfile)
+	dn.ptpUpdate.nodeProfile = nodeCfgUpdate.nodeProfile
+	dn.ptpUpdate.updateCh <- true
 }
 
 func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
@@ -199,20 +204,16 @@ func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
 	}
 	logging.Debugf("node labels: %+v", nodeLabels)
 
-	current, update, err := getCfgStatusUpdate(confList, dn.nodeName, nodeLabels)
+	nodeCfgUpdate, err := getNodePTPCfgUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
 		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
 		return
 	}
-	dn.updateNodePTPCfgStatus(current, update)
+	logging.Debugf("getNodePTPCfgUpdate() nodeCfgUpdate :+v", nodeCfgUpdate)
+	dn.updateNodePTPCfgStatus(nodeCfgUpdate.current, nodeCfgUpdate.update)
 
-	nodeProfile, err := getRecommendProfileSpec(confList, dn.nodeName, nodeLabels)
-	if err != nil {
-		logging.Errorf("get recommend profile spec failed: %v", err)
-		return
-	}
-
-	applyNodePTPProfile(nodeProfile)
+	dn.ptpUpdate.nodeProfile = nodeCfgUpdate.nodeProfile
+	dn.ptpUpdate.updateCh <- true
 }
 
 func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
@@ -222,7 +223,7 @@ func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
 			logging.Errorf("updateNodePTPCfgStatus() current failed: %v", err)
 			return
 		}
-		logging.Debugf("updateNodePTPCfgStatus() current successfully: %+v", updatedCfg)
+		logging.Debugf("updateNodePTPCfgStatus() Current successfully: %+v", updatedCfg)
 	}
 
 	updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&update)
@@ -230,5 +231,5 @@ func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
 		logging.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
 		return
 	}
-	logging.Debugf("updateNodePTPCfgStatus() toUpdate successfully: %+v", updatedCfg)
+	logging.Debugf("updateNodePTPCfgStatus() Update successfully: %+v", updatedCfg)
 }

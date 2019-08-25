@@ -1,11 +1,41 @@
 package daemon
 
 import (
+	"fmt"
 	"sort"
 
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
+
+type nodePTPCfgUpdate struct {
+	current		ptpv1.NodePTPCfg
+	update		ptpv1.NodePTPCfg
+	nodeProfile	*ptpv1.NodePTPProfile
+}
+
+func getNodePTPCfgUpdate(
+	ptpCfgList *ptpv1.NodePTPCfgList,
+	nodeName string,
+	nodeLabels map[string]string,
+) (
+	nodePTPCfgUpdate,
+	error,
+) {
+	var err	error
+	nodeCfgUpdate := nodePTPCfgUpdate{}
+
+	nodeCfgUpdate.current, nodeCfgUpdate.update, err =
+		getCfgStatusUpdate(ptpCfgList, nodeName, nodeLabels)
+	if err != nil {
+		return nodeCfgUpdate, fmt.Errorf("getNodePTPCfgUpdate() getCfgStatusUpdate failed: %v", err)
+	}
+	nodeCfgUpdate.nodeProfile, err =
+		getRecommendProfileSpec(ptpCfgList, nodeName, nodeLabels)
+	if err != nil {
+		return nodeCfgUpdate, fmt.Errorf("getNodePTPCfgUpdate() getRecommendProfileSpec failed: %v", err)
+	}
+	return nodeCfgUpdate, nil
+}
 
 func getCfgStatusUpdate(
 	ptpCfgList *ptpv1.NodePTPCfgList,
@@ -22,7 +52,6 @@ func getCfgStatusUpdate(
 	)
 
 	profileName, _ := getRecommendProfileName(ptpCfgList, nodeName, nodeLabels)
-	logging.Debugf("getNodePTPCfgToUpdate(), profile name: %+v", profileName)
 	for _, cfg := range ptpCfgList.Items {
 		if cfg.Status.MatchList != nil {
 			for idx, m := range cfg.Status.MatchList {
@@ -30,28 +59,44 @@ func getCfgStatusUpdate(
 					cfg.Status.MatchList = append(
 						cfg.Status.MatchList[:idx],
 						cfg.Status.MatchList[idx+1:]...)
-					logging.Debugf("getNodePTPCfgToUpdate(), append current cfg: %+v", cfg)
 					cfgCurrent = cfg
 				}
 			}
 		}
 		if cfg.Spec.Profile != nil {
 			for _, p := range cfg.Spec.Profile {
-				if profileName == *p.Name {
+				if profileName == p.Name {
 					cfg.Status.MatchList = append(
 						cfg.Status.MatchList,
 						ptpv1.NodeMatchList{
 							NodeName: &nodeName,
 							Profile: &profileName})
-					logging.Debugf("getNodePTPCfgToUpdate(), append toUpdate cfg: %+v", cfg)
 					cfgUpdate = cfg
 				}
 			}
 		}
 	}
-	logging.Debugf("getNodePTPCfgToUpdate(), cfgCurrent: %+v", cfgCurrent)
-	logging.Debugf("getNodePTPCfgToUpdate(), cfgUpdate: %+v", cfgUpdate)
 	return cfgCurrent, cfgUpdate, nil
+}
+
+func getRecommendProfileSpec(
+	ptpCfgList *ptpv1.NodePTPCfgList,
+	nodeName string,
+	nodeLabels map[string]string,
+) ( *ptpv1.NodePTPProfile, error ) {
+
+	profileName, _ := getRecommendProfileName(ptpCfgList, nodeName, nodeLabels)
+
+	for _, cfg := range ptpCfgList.Items {
+		if cfg.Spec.Profile != nil {
+			for _, profile := range cfg.Spec.Profile {
+				if profile.Name == profileName {
+					return &profile, nil
+				}
+			}
+		}
+	}
+	return &ptpv1.NodePTPProfile{}, nil
 }
 
 func getRecommendProfileName(
@@ -66,7 +111,6 @@ func getRecommendProfileName(
 
 	// append recommend section from each custom resource into one list
 	for _, cfg := range ptpCfgList.Items {
-		logging.Debugf("getRecommendProfileName(), nodePTPCfg: %+v", cfg)
 		if cfg.Spec.Recommend != nil {
 			allRecommend = append(allRecommend, cfg.Spec.Recommend...)
 		}
@@ -119,13 +163,4 @@ func getRecommendProfileName(
 		}
 	}
 	return "", nil
-}
-
-func getRecommendProfileSpec(
-	ptpCfgList *ptpv1.NodePTPCfgList,
-	nodeName string,
-	nodeLabels map[string]string,
-) ( ptpv1.NodePTPProfile, error ) {
-	var nodeProfile ptpv1.NodePTPProfile
-	return nodeProfile, nil
 }

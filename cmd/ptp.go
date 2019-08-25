@@ -61,7 +61,10 @@ func main() {
 
 	err = daemon.New(
 		os.Getenv("PTP_NODE_NAME"),
-		daemon.PtpNamespace, ptpClient, kubeClient, stopCh,
+		daemon.PtpNamespace,
+		ptpClient,
+		kubeClient,
+		stopCh,
 	).Run()
 	if err != nil {
 		logging.Errorf("cannot run daemon: %v", err)
