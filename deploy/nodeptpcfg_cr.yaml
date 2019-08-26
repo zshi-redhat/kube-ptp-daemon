@@ -7,10 +7,12 @@ spec:
   ptpDevices:
   - profile:
       name: "profile1"
-      interfaces: "eth0 eth1"
+      interfaces: "eth0"
+      ptp4lOpts: "-s -2"
+      phc2sysOpts: "-a -r"
     recommend:
       profile: "profile1"
       priority: 4
       match:
-      - nodeLabel: "123"
-        nodeName: "nfvpe-24"
+      - nodeLabel: "node-role.kubernetes.io/worker="
+        nodeName: "worker-1"
