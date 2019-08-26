@@ -152,22 +152,13 @@ func (dn *Daemon) getNodeLabels(clientset *kubernetes.Clientset) (map[string]str
         return node.Labels, nil
 }
 
-func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
-	nodePTPCfg := obj.(*ptpv1.NodePTPCfg)
-	logging.Debugf("nodePTPCfgAdd(), nodePTPCfg: %+v", nodePTPCfg)
-
-	confList, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).List(metav1.ListOptions{})
-	if err != nil {
-		logging.Errorf("failed to list NodePTPCfgs: %v", err)
-		return
-	}
-
+func (dn *Daemon) updateLinuxPTPInstance(confList *ptpv1.NodePTPCfgList) {
 	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
 	if err != nil {
 		logging.Debugf("get node labels failed: %v", err)
 		return
 	}
-	logging.Debugf("node labels: %+v", nodeLabels)
+	logging.Debugf("updateLinuxPTPInstance() node labels: %+v", nodeLabels)
 
 	nodeCfgUpdate, err := getNodePTPCfgUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
@@ -179,6 +170,18 @@ func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
 
 	dn.ptpUpdate.nodeProfile = nodeCfgUpdate.nodeProfile
 	dn.ptpUpdate.updateCh <- true
+}
+
+func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
+	nodePTPCfg := obj.(*ptpv1.NodePTPCfg)
+	logging.Debugf("nodePTPCfgAdd(), nodePTPCfg: %+v", nodePTPCfg)
+
+	confList, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).List(metav1.ListOptions{})
+	if err != nil {
+		logging.Errorf("failed to list NodePTPCfgs: %v", err)
+		return
+	}
+	dn.updateLinuxPTPInstance(confList)
 }
 
 func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
@@ -196,24 +199,7 @@ func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
 		logging.Errorf("failed to list NodePTPCfgs: %v", err)
 		return
 	}
-
-	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
-	if err != nil {
-		logging.Debugf("get node labels failed: %v", err)
-		return
-	}
-	logging.Debugf("node labels: %+v", nodeLabels)
-
-	nodeCfgUpdate, err := getNodePTPCfgUpdate(confList, dn.nodeName, nodeLabels)
-	if err != nil {
-		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
-		return
-	}
-	logging.Debugf("getNodePTPCfgUpdate() nodeCfgUpdate :+v", nodeCfgUpdate)
-	dn.updateNodePTPCfgStatus(nodeCfgUpdate.current, nodeCfgUpdate.update)
-
-	dn.ptpUpdate.nodeProfile = nodeCfgUpdate.nodeProfile
-	dn.ptpUpdate.updateCh <- true
+	dn.updateLinuxPTPInstance(confList)
 }
 
 func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
