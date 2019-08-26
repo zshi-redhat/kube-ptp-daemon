@@ -11,11 +11,11 @@ type NodePTPCfgSpec struct {
 }
 
 type NodePTPProfile struct {
-	Name		string		`json:"name"`
-	Interfaces	[]string	`json:"interfaces"`
-	Ptp4lOpts	string		`json:"ptp4lOpts,omitempty"`
-	Phc2sysOpts	string		`json:"phc2sysOpts,omitempty"`
-	Ptp4lConf	string		`json:"ptp4lConf,omitempty"`
+	Name		*string		`json:"name"`
+	Interface	*string		`json:"interface"`
+	Ptp4lOpts	*string		`json:"ptp4lOpts,omitempty"`
+	Phc2sysOpts	*string		`json:"phc2sysOpts,omitempty"`
+	Ptp4lConf	*string		`json:"ptp4lConf,omitempty"`
 }
 
 type NodePTPRecommend struct {

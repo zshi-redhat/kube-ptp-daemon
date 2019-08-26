@@ -107,15 +107,26 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 	// collector (assuming there are no other
 	// references).
 	pm.process = nil
-	pm.process = append(pm.process, &ptpProcess{
-		name: "phc2sys",
-		exitCh: make(chan bool),
-		cmd: phc2sysCreateCmd(nodeProfile)})
 
-	pm.process = append(pm.process, &ptpProcess{
-		name: "ptp4l",
-		exitCh: make(chan bool),
-		cmd: ptp4lCreateCmd(nodeProfile)})
+	// TODO:
+	// compare nodeProfile with previous config,
+	// only apply when nodeProfile changes
+
+	if nodeProfile.Phc2sysOpts != nil {
+		pm.process = append(pm.process, &ptpProcess{
+			name: "phc2sys",
+			exitCh: make(chan bool),
+			cmd: phc2sysCreateCmd(nodeProfile)})
+		logging.Debugf("applyNodePTPProfile() not starting phc2sys, phc2sysOpts empty")
+	}
+
+	if nodeProfile.Ptp4lOpts != nil && nodeProfile.Interface != nil {
+		pm.process = append(pm.process, &ptpProcess{
+			name: "ptp4l",
+			exitCh: make(chan bool),
+			cmd: ptp4lCreateCmd(nodeProfile)})
+		logging.Debugf("applyNodePTPProfile() not starting ptp4l, ptp4lOpts or interface empty")
+	}
 
 	for _, p := range pm.process {
 		if p != nil {
@@ -128,7 +139,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 
 // phc2sysCreateCmd generate phc2sys command
 func phc2sysCreateCmd(nodeProfile *ptpv1.NodePTPProfile) *exec.Cmd {
-	cmdLine := fmt.Sprintf("/usr/sbin/phc2sys %s", nodeProfile.Phc2sysOpts)
+	cmdLine := fmt.Sprintf("/usr/sbin/phc2sys %s", *nodeProfile.Phc2sysOpts)
 	args := strings.Split(cmdLine, " ")
 	return exec.Command(args[0], args[1:]...)
 }
@@ -136,9 +147,10 @@ func phc2sysCreateCmd(nodeProfile *ptpv1.NodePTPProfile) *exec.Cmd {
 // ptp4lCreateCmd generate ptp4l command
 func ptp4lCreateCmd(nodeProfile *ptpv1.NodePTPProfile) *exec.Cmd {
 	cmdLine := fmt.Sprintf("/usr/sbin/ptp4l -m -f %s -i %s %s",
-			PTP4L_CONF_FILE_PATH,
-			strings.Join(nodeProfile.Interfaces[:], " "),
-			nodeProfile.Ptp4lOpts)
+		PTP4L_CONF_FILE_PATH,
+		*nodeProfile.Interface,
+		*nodeProfile.Ptp4lOpts)
+
 	args := strings.Split(cmdLine, " ")
 	return exec.Command(args[0], args[1:]...)
 }

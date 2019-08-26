@@ -65,7 +65,7 @@ func getCfgStatusUpdate(
 		}
 		if cfg.Spec.Profile != nil {
 			for _, p := range cfg.Spec.Profile {
-				if profileName == p.Name {
+				if profileName == *p.Name {
 					cfg.Status.MatchList = append(
 						cfg.Status.MatchList,
 						ptpv1.NodeMatchList{
@@ -90,7 +90,7 @@ func getRecommendProfileSpec(
 	for _, cfg := range ptpCfgList.Items {
 		if cfg.Spec.Profile != nil {
 			for _, profile := range cfg.Spec.Profile {
-				if profile.Name == profileName {
+				if *profile.Name == profileName {
 					return &profile, nil
 				}
 			}
