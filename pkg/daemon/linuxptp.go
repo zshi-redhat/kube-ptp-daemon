@@ -117,6 +117,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			name: "phc2sys",
 			exitCh: make(chan bool),
 			cmd: phc2sysCreateCmd(nodeProfile)})
+	} else {
 		logging.Debugf("applyNodePTPProfile() not starting phc2sys, phc2sysOpts empty")
 	}
 
@@ -125,6 +126,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			name: "ptp4l",
 			exitCh: make(chan bool),
 			cmd: ptp4lCreateCmd(nodeProfile)})
+	} else {
 		logging.Debugf("applyNodePTPProfile() not starting ptp4l, ptp4lOpts or interface empty")
 	}
 
