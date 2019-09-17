@@ -127,6 +127,7 @@ func (dn *Daemon) createNodePTPDevResource() {
 	createdPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Create(ptpDev)
 	if err != nil {
 		logging.Errorf("createNodePTPDevResource() failed: %v", err)
+		return
 	}
 	logging.Debugf("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
 }
