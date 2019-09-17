@@ -23,7 +23,7 @@ rules:
 - apiGroups:
   - ptp.openshift.io
   resources:
-  - nodeptpstatuses
+  - '*'
   verbs:
   - '*'
 
