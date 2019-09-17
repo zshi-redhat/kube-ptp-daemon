@@ -124,12 +124,20 @@ func (dn *Daemon) createNodePTPDevResource() {
 				PTPDevices: []ptpv1.PTPDevice{},
 			},
 		}
-	createdPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Create(ptpDev)
-	if err != nil {
-		logging.Errorf("createNodePTPDevResource() failed: %v", err)
+	_, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Get(dn.nodeName, metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		createdPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Create(ptpDev)
+		if err != nil {
+			logging.Errorf("createNodePTPDevResource() failed: %v", err)
+			return
+		}
+		logging.Debugf("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
+        } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
+                logging.Errorf("Error getting nodePTPDev %s: %v", dn.nodeName, statusError.ErrStatus.Message)
 		return
+        } else {
+		logging.Debugf("createNodePTPDevResource(), resource already exist, skipping")
 	}
-	logging.Debugf("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
 }
 
 func (dn *Daemon) updateNodePTPDevStatus(ptpDev *ptpv1.NodePTPDev) {
