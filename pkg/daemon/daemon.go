@@ -213,10 +213,13 @@ func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
 		logging.Debugf("updateNodePTPCfgStatus() Current successfully: %+v", updatedCfg)
 	}
 
-	updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&update)
-	if err != nil {
-		logging.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
-		return
+	if update.Name != "" {
+		updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&update)
+		if err != nil {
+			logging.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
+			return
+		}
+		logging.Debugf("updateNodePTPCfgStatus() Update successfully: %+v", updatedCfg)
 	}
-	logging.Debugf("updateNodePTPCfgStatus() Update successfully: %+v", updatedCfg)
+	logging.Debugf("updateNodePTPCfgStatus() Update nothing")
 }
