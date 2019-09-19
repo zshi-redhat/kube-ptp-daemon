@@ -23,3 +23,4 @@ import:
 - package: k8s.io/gengo
 - package: k8s.io/klog
   version: ^0.4.0
+- package: github.com/golang/glog

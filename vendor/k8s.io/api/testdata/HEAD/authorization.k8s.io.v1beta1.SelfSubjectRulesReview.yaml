@@ -14,6 +14,9 @@ metadata:
     "7": "8"
   managedFields:
   - apiVersion: "17"
+    fields:
+      "18":
+        "19": null
     manager: "16"
     operation: 鐊唊飙Ş-U圴÷a/ɔ}摁(湗Ć]
   name: "2"
@@ -25,25 +28,25 @@ metadata:
     kind: "12"
     name: "13"
     uid: Dz廔ȇ{sŊƏp
-  resourceVersion: "11042405498087606203"
+  resourceVersion: "16964250748386560239"
   selfLink: "5"
-  uid: "7"
+  uid: ą飋īqJ枊a8衍`Ĩɘ.蘯6ċV夸e
 spec:
-  namespace: "18"
+  namespace: "24"
 status:
-  evaluationError: "25"
-  incomplete: true
+  evaluationError: "31"
+  incomplete: false
   nonResourceRules:
   - nonResourceURLs:
-    - "24"
+    - "30"
     verbs:
-    - "23"
+    - "29"
   resourceRules:
   - apiGroups:
-    - "20"
+    - "26"
     resourceNames:
-    - "22"
+    - "28"
     resources:
-    - "21"
+    - "27"
     verbs:
-    - "19"
+    - "25"

@@ -14,6 +14,9 @@ metadata:
     "7": "8"
   managedFields:
   - apiVersion: "17"
+    fields:
+      "18":
+        "19": null
     manager: "16"
     operation: 鐊唊飙Ş-U圴÷a/ɔ}摁(湗Ć]
   name: "2"
@@ -25,35 +28,35 @@ metadata:
     kind: "12"
     name: "13"
     uid: Dz廔ȇ{sŊƏp
-  resourceVersion: "11042405498087606203"
+  resourceVersion: "16964250748386560239"
   selfLink: "5"
-  uid: "7"
+  uid: ą飋īqJ枊a8衍`Ĩɘ.蘯6ċV夸e
 subsets:
 - addresses:
-  - hostname: "19"
-    ip: "18"
-    nodeName: "20"
+  - hostname: "25"
+    ip: "24"
+    nodeName: "26"
     targetRef:
-      apiVersion: "24"
-      fieldPath: "26"
-      kind: "21"
-      name: "23"
-      namespace: "22"
-      resourceVersion: "25"
-      uid: Hr鯹)晿<o,c鮽ort昍řČ扷5Ɨ
+      apiVersion: "30"
+      fieldPath: "32"
+      kind: "27"
+      name: "29"
+      namespace: "28"
+      resourceVersion: "31"
+      uid: ěĂ凗蓏Ŋ蛊ĉy緅縕
   notReadyAddresses:
-  - hostname: "28"
-    ip: "27"
-    nodeName: "29"
+  - hostname: "34"
+    ip: "33"
+    nodeName: "35"
     targetRef:
-      apiVersion: "33"
-      fieldPath: "35"
-      kind: "30"
-      name: "32"
-      namespace: "31"
-      resourceVersion: "34"
-      uid: Ă凗蓏Ŋ蛊ĉy
+      apiVersion: "39"
+      fieldPath: "41"
+      kind: "36"
+      name: "38"
+      namespace: "37"
+      resourceVersion: "40"
+      uid: 颋ǅ
   ports:
-  - name: "36"
-    port: 1546792211
-    protocol: '>Ž燹憍峕?狱³-Ǐ忄*'
+  - name: "42"
+    port: 1575426699
+    protocol: ƏS$+½H牗洝尿

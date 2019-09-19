@@ -14,6 +14,9 @@ metadata:
     "7": "8"
   managedFields:
   - apiVersion: "17"
+    fields:
+      "18":
+        "19": null
     manager: "16"
     operation: 鐊唊飙Ş-U圴÷a/ɔ}摁(湗Ć]
   name: "2"
@@ -25,29 +28,30 @@ metadata:
     kind: "12"
     name: "13"
     uid: Dz廔ȇ{sŊƏp
-  resourceVersion: "11042405498087606203"
+  resourceVersion: "16964250748386560239"
   selfLink: "5"
-  uid: "7"
+  uid: ą飋īqJ枊a8衍`Ĩɘ.蘯6ċV夸e
 spec:
   extra:
-    "29":
-    - "30"
+    "35":
+    - "36"
   group:
-  - "28"
+  - "34"
   nonResourceAttributes:
-    path: "25"
-    verb: "26"
+    path: "31"
+    verb: "32"
   resourceAttributes:
-    group: "20"
-    name: "24"
-    namespace: "18"
-    resource: "22"
-    subresource: "23"
-    verb: "19"
-    version: "21"
-  uid: "31"
-  user: "27"
+    group: "26"
+    name: "30"
+    namespace: "24"
+    resource: "28"
+    subresource: "29"
+    verb: "25"
+    version: "27"
+  uid: "37"
+  user: "33"
 status:
   allowed: false
-  evaluationError: "33"
-  reason: "32"
+  denied: true
+  evaluationError: "39"
+  reason: "38"

@@ -113,7 +113,10 @@ gopls flags are:
 // If no arguments are passed it will invoke the server sub command, as a
 // temporary measure for compatibility.
 func (app *Application) Run(ctx context.Context, args ...string) error {
-	export.AddExporters(ocagent.Connect(app.name, app.OCAgent))
+	ocConfig := ocagent.Discover()
+	//TODO: we should not need to adjust the discovered configuration
+	ocConfig.Address = app.OCAgent
+	export.AddExporters(ocagent.Connect(ocConfig))
 	app.Serve.app = app
 	if len(args) == 0 {
 		tool.Main(ctx, &app.Serve, args)
@@ -191,7 +194,7 @@ func (app *Application) connect(ctx context.Context) (*connection, error) {
 }
 
 func (c *connection) initialize(ctx context.Context) error {
-	params := &protocol.InitializeParams{}
+	params := &protocol.ParamInitia{}
 	params.RootURI = string(span.FileURI(c.Client.app.wd))
 	params.Capabilities.Workspace.Configuration = true
 	params.Capabilities.TextDocument.Hover.ContentFormat = []protocol.MarkupKind{protocol.PlainText}
@@ -280,7 +283,7 @@ func (c *cmdClient) WorkspaceFolders(ctx context.Context) ([]protocol.WorkspaceF
 	return nil, nil
 }
 
-func (c *cmdClient) Configuration(ctx context.Context, p *protocol.ConfigurationParams) ([]interface{}, error) {
+func (c *cmdClient) Configuration(ctx context.Context, p *protocol.ParamConfig) ([]interface{}, error) {
 	results := make([]interface{}, len(p.Items))
 	for i, item := range p.Items {
 		if item.Section != "gopls" {
@@ -295,8 +298,7 @@ func (c *cmdClient) Configuration(ctx context.Context, p *protocol.Configuration
 			env[l[0]] = l[1]
 		}
 		results[i] = map[string]interface{}{
-			"env":           env,
-			"noDocsOnHover": true,
+			"env": env,
 		}
 	}
 	return results, nil
@@ -342,7 +344,12 @@ func (c *cmdClient) getFile(ctx context.Context, uri span.URI) *cmdFile {
 		}
 		f := c.fset.AddFile(fname, -1, len(content))
 		f.SetLinesForContent(content)
-		file.mapper = protocol.NewColumnMapper(uri, fname, c.fset, f, content)
+		converter := span.NewContentConverter(fname, content)
+		file.mapper = &protocol.ColumnMapper{
+			URI:       uri,
+			Converter: converter,
+			Content:   content,
+		}
 	}
 	return file
 }

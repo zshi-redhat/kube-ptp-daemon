@@ -6,8 +6,8 @@
     "generateName": "3",
     "namespace": "4",
     "selfLink": "5",
-    "uid": "7",
-    "resourceVersion": "11042405498087606203",
+    "uid": "ą飋īqJ枊a8衍`Ĩɘ.蘯6ċV夸e",
+    "resourceVersion": "16964250748386560239",
     "generation": 8071137005907523419,
     "creationTimestamp": null,
     "deletionGracePeriodSeconds": -4955867275792137171,
@@ -35,38 +35,40 @@
       {
         "manager": "16",
         "operation": "鐊唊飙Ş-U圴÷a/ɔ}摁(湗Ć]",
-        "apiVersion": "17"
+        "apiVersion": "17",
+        "fields": {"18":{"19":null}}
       }
     ]
   },
   "spec": {
     "resourceAttributes": {
-      "namespace": "18",
-      "verb": "19",
-      "group": "20",
-      "version": "21",
-      "resource": "22",
-      "subresource": "23",
-      "name": "24"
+      "namespace": "24",
+      "verb": "25",
+      "group": "26",
+      "version": "27",
+      "resource": "28",
+      "subresource": "29",
+      "name": "30"
     },
     "nonResourceAttributes": {
-      "path": "25",
-      "verb": "26"
+      "path": "31",
+      "verb": "32"
     },
-    "user": "27",
+    "user": "33",
     "group": [
-      "28"
+      "34"
     ],
     "extra": {
-      "29": [
-  "30"
+      "35": [
+  "36"
 ]
     },
-    "uid": "31"
+    "uid": "37"
   },
   "status": {
     "allowed": false,
-    "reason": "32",
-    "evaluationError": "33"
+    "denied": true,
+    "reason": "38",
+    "evaluationError": "39"
   }
 }
