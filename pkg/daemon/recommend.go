@@ -166,8 +166,8 @@ func getRecommendProfileName(
 				// return immediately when label matches
 				// this makes sure priority field is respected
 				for k, _ := range nodeLabels {
-					return *r.Profile, nil
 					if *m.NodeLabel == k {
+						return *r.Profile, nil
 						labelMatches = append(labelMatches, *r.Profile)
 					}
 				}
