@@ -91,10 +91,11 @@ func (lp *linuxPTP) Run() {
 }
 
 func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPProfile) error {
-	glog.Infof("applyNodePTPProfile() NodePTPProfile: %+v", nodeProfile)
+	glog.Infof("in applyNodePTPProfile")
+	glog.Infof("updating NodePTPProfile to: %+v", nodeProfile)
 	for _, p := range pm.process {
 		if p != nil {
-			glog.Infof("stopping commands.... %+v", p)
+			glog.Infof("stopping process.... %+v", p)
 			cmdStop(p)
 			p = nil
 		}
@@ -118,7 +119,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			exitCh: make(chan bool),
 			cmd: phc2sysCreateCmd(nodeProfile)})
 	} else {
-		glog.Infof("applyNodePTPProfile() not starting phc2sys, phc2sysOpts empty")
+		glog.Infof("applyNodePTPProfile: not starting phc2sys, phc2sysOpts is empty")
 	}
 
 	if nodeProfile.Ptp4lOpts != nil && nodeProfile.Interface != nil {
@@ -127,7 +128,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			exitCh: make(chan bool),
 			cmd: ptp4lCreateCmd(nodeProfile)})
 	} else {
-		glog.Infof("applyNodePTPProfile() not starting ptp4l, ptp4lOpts or interface empty")
+		glog.Infof("applyNodePTPProfile: not starting ptp4l, ptp4lOpts or interface is empty")
 	}
 
 	for _, p := range pm.process {

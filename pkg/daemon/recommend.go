@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/golang/glog"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
 
@@ -21,6 +22,8 @@ func getNodePTPCfgUpdate(
 	nodePTPCfgUpdate,
 	error,
 ) {
+	glog.V(2).Infof("in getNodePTPCfgUpdate")
+
 	var err	error
 	nodeCfgUpdate := nodePTPCfgUpdate{}
 
@@ -34,6 +37,8 @@ func getNodePTPCfgUpdate(
 	if err != nil {
 		return nodeCfgUpdate, fmt.Errorf("getNodePTPCfgUpdate() getRecommendProfileSpec failed: %v", err)
 	}
+
+	glog.V(2).Infof("node PTP configuration to be updated: %+v", nodeCfgUpdate)
 	return nodeCfgUpdate, nil
 }
 
@@ -46,12 +51,16 @@ func getCfgStatusUpdate(
 	ptpv1.NodePTPCfg,
 	error,
 ) {
+	glog.V(2).Infof("in getCfgStatusUpdate")
+
 	var (
 		cfgCurrent ptpv1.NodePTPCfg
 		cfgUpdate ptpv1.NodePTPCfg
 	)
 
 	profileName, _ := getRecommendProfileName(ptpCfgList, nodeName, nodeLabels)
+	glog.V(2).Infof("recommended profile name: %+v", profileName)
+
 	for _, cfg := range ptpCfgList.Items {
 		if cfg.Status.MatchList != nil {
 			for idx, m := range cfg.Status.MatchList {
@@ -76,6 +85,8 @@ func getCfgStatusUpdate(
 			}
 		}
 	}
+	glog.V(2).Infof("nodePTPCfg Status to be updated(current): %+v", cfgCurrent)
+	glog.V(2).Infof("nodePTPCfg Status to be updated(update): %+v", cfgUpdate)
 	return cfgCurrent, cfgUpdate, nil
 }
 
@@ -84,8 +95,10 @@ func getRecommendProfileSpec(
 	nodeName string,
 	nodeLabels map[string]string,
 ) ( *ptpv1.NodePTPProfile, error ) {
+	glog.V(2).Infof("in getRecommendProfileSpec")
 
 	profileName, _ := getRecommendProfileName(ptpCfgList, nodeName, nodeLabels)
+	glog.V(2).Infof("recommended profile name: %+v", profileName)
 
 	for _, cfg := range ptpCfgList.Items {
 		if cfg.Spec.Profile != nil {
@@ -104,6 +117,8 @@ func getRecommendProfileName(
 	nodeName string,
 	nodeLabels map[string]string,
 ) ( string, error ) {
+	glog.V(2).Infof("in getRecommendProfileName")
+
 	var (
 		labelMatches	[]string
 		allRecommend	[]ptpv1.NodePTPRecommend
