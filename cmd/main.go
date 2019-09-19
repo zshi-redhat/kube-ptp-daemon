@@ -7,7 +7,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
+	"github.com/golang/glog"
 	ptpclient "github.com/zshi-redhat/kube-ptp-daemon/pkg/client/clientset/versioned"
 	"github.com/zshi-redhat/kube-ptp-daemon/pkg/config"
 	"github.com/zshi-redhat/kube-ptp-daemon/pkg/daemon"
@@ -17,13 +17,11 @@ import (
 
 type cliParams struct {
 	updateInterval	int
-	logLevel	string
 }
 
 // Parse Command line flags
 func flagInit(cp *cliParams) {
         flag.IntVar(&cp.updateInterval, "update-interval", config.DefaultUpdateInterval, "Interval to update PTP status")
-        flag.StringVar(&cp.logLevel, "log-level", config.DefaultLogLevel, "Level of log message")
 }
 
 
@@ -32,27 +30,24 @@ func main() {
 	flag.Parse()
 	flagInit(cp)
 
-	config.SetLogLevel(cp.logLevel)
-
-	logging.Debugf("log level set to: %s", cp.logLevel)
-	logging.Debugf("resync period set to: %d [s]", cp.updateInterval)
+	glog.Infof("resync period set to: %d [s]", cp.updateInterval)
 
 	cfg, err := config.GetKubeConfig()
 	if err != nil {
-		logging.Errorf("get kubeconfig failed: %v", err)
+		glog.Errorf("get kubeconfig failed: %v", err)
 		return
 	}
-	logging.Debugf("successfully get kubeconfig")
+	glog.Infof("successfully get kubeconfig")
 
         kubeClient, err := kubernetes.NewForConfig(cfg)
         if err != nil {
-                logging.Errorf("cannot create new config for kubeClient: %v", err)
+                glog.Errorf("cannot create new config for kubeClient: %v", err)
                 return
         }
 
 	ptpClient, err := ptpclient.NewForConfig(cfg)
 	if err != nil {
-		logging.Errorf("cannot create new config for ptpClient: %v", err)
+		glog.Errorf("cannot create new config for ptpClient: %v", err)
 		return
 	}
 
@@ -67,7 +62,7 @@ func main() {
 		stopCh,
 	).Run()
 	if err != nil {
-		logging.Errorf("cannot run daemon: %v", err)
+		glog.Errorf("cannot run daemon: %v", err)
 	}
 
 	tickerPull := time.NewTicker(time.Second * time.Duration(cp.updateInterval))
@@ -79,9 +74,9 @@ func main() {
 	for {
 		select {
 		case <-tickerPull.C:
-			logging.Debugf("ticker pull")
+			glog.Infof("ticker pull")
 		case sig := <-sigCh:
-			logging.Debugf("signal received, shutting down", sig)
+			glog.Infof("signal received, shutting down", sig)
 			return
 		}
 	}

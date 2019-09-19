@@ -6,14 +6,12 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
         "k8s.io/client-go/rest"
         "k8s.io/client-go/tools/clientcmd"
 )
 
 const (
 	DefaultUpdateInterval = 120
-	DefaultLogLevel       = "debug"
 )
 
 func GetKubeConfig() (*rest.Config, error) {
@@ -40,8 +38,4 @@ func GetKubeConfig() (*rest.Config, error) {
         }
 
         return nil, fmt.Errorf("Could not locate a kubeconfig")
-}
-
-func SetLogLevel(level string) {
-	logging.SetLogLevel(level)
 }

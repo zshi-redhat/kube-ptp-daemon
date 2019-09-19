@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
+	"github.com/golang/glog"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
 
@@ -74,7 +74,7 @@ func (lp *linuxPTP) Run() {
 		case <-lp.ptpUpdate.updateCh:
 			err := applyNodePTPProfile(processManager, lp.ptpUpdate.nodeProfile)
 			if err != nil {
-				logging.Errorf("linuxPTP apply node profile failed: %v", err)
+				glog.Errorf("linuxPTP apply node profile failed: %v", err)
 			}
 		case <-lp.stopCh:
 			for _, p := range processManager.process {
@@ -83,7 +83,7 @@ func (lp *linuxPTP) Run() {
 					p = nil
 				}
 			}
-			logging.Debugf("linuxPTP stop signal received, existing..")
+			glog.Infof("linuxPTP stop signal received, existing..")
 			return
 		}
 	}
@@ -91,10 +91,10 @@ func (lp *linuxPTP) Run() {
 }
 
 func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPProfile) error {
-	logging.Debugf("applyNodePTPProfile() NodePTPProfile: %+v", nodeProfile)
+	glog.Infof("applyNodePTPProfile() NodePTPProfile: %+v", nodeProfile)
 	for _, p := range pm.process {
 		if p != nil {
-			logging.Debugf("stopping commands.... %+v", p)
+			glog.Infof("stopping commands.... %+v", p)
 			cmdStop(p)
 			p = nil
 		}
@@ -118,7 +118,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			exitCh: make(chan bool),
 			cmd: phc2sysCreateCmd(nodeProfile)})
 	} else {
-		logging.Debugf("applyNodePTPProfile() not starting phc2sys, phc2sysOpts empty")
+		glog.Infof("applyNodePTPProfile() not starting phc2sys, phc2sysOpts empty")
 	}
 
 	if nodeProfile.Ptp4lOpts != nil && nodeProfile.Interface != nil {
@@ -127,7 +127,7 @@ func applyNodePTPProfile(pm *linuxPTPProcessManager, nodeProfile *ptpv1.NodePTPP
 			exitCh: make(chan bool),
 			cmd: ptp4lCreateCmd(nodeProfile)})
 	} else {
-		logging.Debugf("applyNodePTPProfile() not starting ptp4l, ptp4lOpts or interface empty")
+		glog.Infof("applyNodePTPProfile() not starting ptp4l, ptp4lOpts or interface empty")
 	}
 
 	for _, p := range pm.process {
@@ -160,8 +160,8 @@ func ptp4lCreateCmd(nodeProfile *ptpv1.NodePTPProfile) *exec.Cmd {
 
 // cmdRun runs given ptpProcess and wait for errors
 func cmdRun(p *ptpProcess) {
-	logging.Debugf("Starting %s...", p.name)
-	logging.Debugf("%s cmd: %+v", p.name, p.cmd)
+	glog.Infof("Starting %s...", p.name)
+	glog.Infof("%s cmd: %+v", p.name, p.cmd)
 
 	defer func() {
 		p.exitCh <- true
@@ -169,7 +169,7 @@ func cmdRun(p *ptpProcess) {
 
 	cmdReader, err := p.cmd.StdoutPipe()
 	if err != nil {
-		logging.Errorf("cmdRun() error creating StdoutPipe for %s: %v", p.name, err)
+		glog.Errorf("cmdRun() error creating StdoutPipe for %s: %v", p.name, err)
 		return
 	}
 
@@ -185,7 +185,7 @@ func cmdRun(p *ptpProcess) {
 
 	err = p.cmd.Start()
 	if err != nil {
-		logging.Errorf("cmdRun() error starting %s: %v", p.name, err)
+		glog.Errorf("cmdRun() error starting %s: %v", p.name, err)
 		return
 	}
 
@@ -193,7 +193,7 @@ func cmdRun(p *ptpProcess) {
 
 	err = p.cmd.Wait()
 	if err != nil {
-		logging.Errorf("cmdRun() error waiting for %s: %v", p.name, err)
+		glog.Errorf("cmdRun() error waiting for %s: %v", p.name, err)
 		return
 	}
 	return
@@ -201,16 +201,16 @@ func cmdRun(p *ptpProcess) {
 
 // cmdStop stops ptpProcess launched by cmdRun
 func cmdStop (p *ptpProcess) {
-	logging.Debugf("Stopping %s...", p.name)
+	glog.Infof("Stopping %s...", p.name)
 	if p.cmd == nil {
 		return
 	}
 
 	if p.cmd.Process != nil {
-		logging.Debugf("Sending TERM to PID: %d", p.cmd.Process.Pid)
+		glog.Infof("Sending TERM to PID: %d", p.cmd.Process.Pid)
 		p.cmd.Process.Signal(syscall.SIGTERM)
 	}
 
 	<-p.exitCh
-	logging.Debugf("Process %d terminated", p.cmd.Process.Pid)
+	glog.Infof("Process %d terminated", p.cmd.Process.Pid)
 }

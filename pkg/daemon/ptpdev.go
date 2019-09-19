@@ -1,7 +1,7 @@
 package daemon
 
 import (
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
+	"github.com/golang/glog"
 	ptpnetwork "github.com/zshi-redhat/kube-ptp-daemon/pkg/network"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 )
@@ -9,10 +9,10 @@ import (
 func getDevStatusUpdate(nodePTPDev *ptpv1.NodePTPDev) (*ptpv1.NodePTPDev, error) {
 	hostDevs, err := ptpnetwork.DiscoverPTPDevices()
 	if err != nil {
-		logging.Errorf("discover PTP devices failed: %v", err)
+		glog.Errorf("discover PTP devices failed: %v", err)
 		return nodePTPDev, err
 	}
-	logging.Debugf("PTP capable NICs: %v", hostDevs)
+	glog.Infof("PTP capable NICs: %v", hostDevs)
 	for _, hostDev := range hostDevs {
 		contained := false
 		for _, crDev := range nodePTPDev.Status.PTPDevices {

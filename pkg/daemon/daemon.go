@@ -4,7 +4,7 @@ import(
 	"fmt"
 	"time"
 
-	"github.com/zshi-redhat/kube-ptp-daemon/logging"
+	"github.com/golang/glog"
 	ptpv1 "github.com/zshi-redhat/kube-ptp-daemon/pkg/apis/ptp/v1"
 	ptpclient "github.com/zshi-redhat/kube-ptp-daemon/pkg/client/clientset/versioned"
 	ptpinformer "github.com/zshi-redhat/kube-ptp-daemon/pkg/client/informers/externalversions"
@@ -87,11 +87,11 @@ func (dn *Daemon) Run() error {
 
 func (dn *Daemon) nodePTPDevAddHandler(obj interface{}) {
 	nodePTPDev := obj.(*ptpv1.NodePTPDev)
-	logging.Debugf("nodePTPDevAdd(), nodePTPDev: %v", nodePTPDev)
+	glog.Infof("nodePTPDevAdd(), nodePTPDev: %v", nodePTPDev)
 
 	update, err := getDevStatusUpdate(nodePTPDev)
 	if err != nil {
-		logging.Errorf("getDevStatusUpdate failed: %v", err)
+		glog.Errorf("getDevStatusUpdate failed: %v", err)
 		return
 	}
 	dn.updateNodePTPDevStatus(update)
@@ -104,12 +104,12 @@ func (dn *Daemon) nodePTPDevUpdateHandler(oldStat, newStat interface{}) {
 	if oldNodePTPDev.GetObjectMeta().GetGeneration() ==
 		newNodePTPDev.GetObjectMeta().GetGeneration() { return }
 
-	logging.Debugf("nodePTPDevUpdate(), oldNodePTPDev: %v", oldNodePTPDev)
-	logging.Debugf("nodePTPDevUpdate(), newNodePTPDev: %v", newNodePTPDev)
+	glog.Infof("nodePTPDevUpdate(), oldNodePTPDev: %v", oldNodePTPDev)
+	glog.Infof("nodePTPDevUpdate(), newNodePTPDev: %v", newNodePTPDev)
 
 	update, err := getDevStatusUpdate(newNodePTPDev)
 	if err != nil {
-		logging.Errorf("getDevStatusUpdate failed: %v", err)
+		glog.Errorf("getDevStatusUpdate failed: %v", err)
 	}
 	dn.updateNodePTPDevStatus(update)
 }
@@ -128,24 +128,24 @@ func (dn *Daemon) createNodePTPDevResource() {
 	if errors.IsNotFound(err) {
 		createdPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).Create(ptpDev)
 		if err != nil {
-			logging.Errorf("createNodePTPDevResource() failed: %v", err)
+			glog.Errorf("createNodePTPDevResource() failed: %v", err)
 			return
 		}
-		logging.Debugf("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
+		glog.Infof("createNodePTPDevResource(), resource successfull created: %v", createdPTPDev)
         } else if statusError, isStatus := err.(*errors.StatusError); isStatus {
-                logging.Errorf("Error getting nodePTPDev %s: %v", dn.nodeName, statusError.ErrStatus.Message)
+                glog.Errorf("Error getting nodePTPDev %s: %v", dn.nodeName, statusError.ErrStatus.Message)
 		return
         } else {
-		logging.Debugf("createNodePTPDevResource(), resource already exist, skipping")
+		glog.Infof("createNodePTPDevResource(), resource already exist, skipping")
 	}
 }
 
 func (dn *Daemon) updateNodePTPDevStatus(ptpDev *ptpv1.NodePTPDev) {
 	updatedPTPDev, err := dn.ptpClient.PtpV1().NodePTPDevs(PtpNamespace).UpdateStatus(ptpDev)
 	if err != nil {
-		logging.Errorf("updateNodePTPDevStatus() failed: %v", err)
+		glog.Errorf("updateNodePTPDevStatus() failed: %v", err)
 	}
-	logging.Debugf("updateNodePTPDevStatus(), status successfull updated to: %v", updatedPTPDev.Status)
+	glog.Infof("updateNodePTPDevStatus(), status successfull updated to: %v", updatedPTPDev.Status)
 }
 
 func (dn *Daemon) getNodeLabels(clientset *kubernetes.Clientset) (map[string]string, error) {
@@ -164,17 +164,17 @@ func (dn *Daemon) getNodeLabels(clientset *kubernetes.Clientset) (map[string]str
 func (dn *Daemon) updateLinuxPTPInstance(confList *ptpv1.NodePTPCfgList) {
 	nodeLabels, err := dn.getNodeLabels(dn.kubeClient)
 	if err != nil {
-		logging.Debugf("get node labels failed: %v", err)
+		glog.Infof("get node labels failed: %v", err)
 		return
 	}
-	logging.Debugf("updateLinuxPTPInstance() node labels: %+v", nodeLabels)
+	glog.Infof("updateLinuxPTPInstance() node labels: %+v", nodeLabels)
 
 	nodeCfgUpdate, err := getNodePTPCfgUpdate(confList, dn.nodeName, nodeLabels)
 	if err != nil {
-		logging.Errorf("get nodePTPCfgToUpdate failed: %v", err)
+		glog.Errorf("get nodePTPCfgToUpdate failed: %v", err)
 		return
 	}
-	logging.Debugf("getNodePTPCfgUpdate() nodeCfgUpdate :+v", nodeCfgUpdate)
+	glog.Infof("getNodePTPCfgUpdate() nodeCfgUpdate :+v", nodeCfgUpdate)
 	dn.updateNodePTPCfgStatus(nodeCfgUpdate.current, nodeCfgUpdate.update)
 
 	dn.ptpUpdate.nodeProfile = nodeCfgUpdate.nodeProfile
@@ -183,11 +183,11 @@ func (dn *Daemon) updateLinuxPTPInstance(confList *ptpv1.NodePTPCfgList) {
 
 func (dn *Daemon) nodePTPCfgAddHandler(obj interface{}) {
 	nodePTPCfg := obj.(*ptpv1.NodePTPCfg)
-	logging.Debugf("nodePTPCfgAdd(), nodePTPCfg: %+v", nodePTPCfg)
+	glog.Infof("nodePTPCfgAdd(), nodePTPCfg: %+v", nodePTPCfg)
 
 	confList, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).List(metav1.ListOptions{})
 	if err != nil {
-		logging.Errorf("failed to list NodePTPCfgs: %v", err)
+		glog.Errorf("failed to list NodePTPCfgs: %v", err)
 		return
 	}
 	dn.updateLinuxPTPInstance(confList)
@@ -200,12 +200,12 @@ func (dn *Daemon) nodePTPCfgUpdateHandler(oldStat, newStat interface{}) {
 	if oldNodePTPCfg.GetObjectMeta().GetGeneration() ==
 		newNodePTPCfg.GetObjectMeta().GetGeneration() { return }
 
-	logging.Debugf("nodePTPCfgUpdate(), oldNodePTPCfg: %v", oldNodePTPCfg)
-	logging.Debugf("nodePTPCfgUpdate(), newNodePTPCfg: %v", newNodePTPCfg)
+	glog.Infof("nodePTPCfgUpdate(), oldNodePTPCfg: %v", oldNodePTPCfg)
+	glog.Infof("nodePTPCfgUpdate(), newNodePTPCfg: %v", newNodePTPCfg)
 
 	confList, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).List(metav1.ListOptions{})
 	if err != nil {
-		logging.Errorf("failed to list NodePTPCfgs: %v", err)
+		glog.Errorf("failed to list NodePTPCfgs: %v", err)
 		return
 	}
 	dn.updateLinuxPTPInstance(confList)
@@ -215,19 +215,19 @@ func (dn *Daemon) updateNodePTPCfgStatus(current, update ptpv1.NodePTPCfg) {
 	if current.Name != "" && current.Name != update.Name {
 		updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&current)
 		if err != nil {
-			logging.Errorf("updateNodePTPCfgStatus() current failed: %v", err)
+			glog.Errorf("updateNodePTPCfgStatus() current failed: %v", err)
 			return
 		}
-		logging.Debugf("updateNodePTPCfgStatus() Current successfully: %+v", updatedCfg)
+		glog.Infof("updateNodePTPCfgStatus() Current successfully: %+v", updatedCfg)
 	}
 
 	if update.Name != "" {
 		updatedCfg, err := dn.ptpClient.PtpV1().NodePTPCfgs(PtpNamespace).UpdateStatus(&update)
 		if err != nil {
-			logging.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
+			glog.Errorf("updateNodePTPCfgStatus() update failed: %v", err)
 			return
 		}
-		logging.Debugf("updateNodePTPCfgStatus() Update successfully: %+v", updatedCfg)
+		glog.Infof("updateNodePTPCfgStatus() Update successfully: %+v", updatedCfg)
 	}
-	logging.Debugf("updateNodePTPCfgStatus() Update nothing")
+	glog.Infof("updateNodePTPCfgStatus() Update nothing")
 }
